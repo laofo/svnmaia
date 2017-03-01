@@ -35,7 +35,7 @@ if((empty($reg_usr))or(empty($wpriv))or(empty($wurl))or(empty($comment)))
 function checkurl($t_url)
 {
 	global $svnparentpath,$svn;
-	if($t_url=='')return true;
+//	if($t_url=='')return true;
 	if(strpos($t_url,':'))return false;
 //中文目录判断有问题
 //	if(isset($_GET['from_d']))

@@ -30,7 +30,7 @@ if (mysql_select_db(DBNAME))
 		$staff_no=mysql_real_escape_string($_GET['staff_no'],$mlink);
 		$department=mysql_real_escape_string($_GET['department'],$mlink);
 		$expire=date("Y-m-d" , strtotime("+$user_t day"));
-		$query="update svnauth_user set full_name=\"$fullname\",email=\"$email_n\",staff_no=\"$staff_no\",department=\"$department\",expire=\"$expire\",infotimes=0 where user_id=$uid";
+		$query="update svnauth_user set  fresh=0,full_name=\"$fullname\",email=\"$email_n\",staff_no=\"$staff_no\",department=\"$department\",expire=\"$expire\",infotimes=0 where user_id=$uid";
 		mysql_query($query) or die('<strong>激活失败:</strong>'.mysql_error());
 		echo " <script>window.alert(\"激活成功！\")</script>";
 		echo "<h3>激活成功！返回<a href='/'>svn</a></h3>";
@@ -73,7 +73,7 @@ if (mysql_select_db(DBNAME))
 			
 
 }
-$exp=date('Y-m-d' , strtotime('+2 week')); 
+$exp=date('Y-m-d' , strtotime('+3 week')); 
 if($expire>$exp)
 {
 		echo " <script>window.alert(\"你已激活过！你的用户无需再次激活！\")</script>";

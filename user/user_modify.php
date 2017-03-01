@@ -129,10 +129,10 @@ if (mysql_select_db(DBNAME))
 		<legend>编辑用户信息</legend>
 		<input type=hidden name=action value='modify'>
 		<table  cellspacing='1' cellpadding='0' width='70%' border='0' >
-		<tr><th>用户名</th><th>姓名</th><th>工号</th><th>部门</th><th>邮件</th></tr>
+		<tr><th>用户名</th><th>姓名</th><th>工号</th><th>部门</th><th>邮件</th><th>机器人账户</th></tr>
 HTML;
 		if ($_SESSION['role']=='admin'){
-			$query="select user_id,user_name,full_name,email,department,staff_no from svnauth_user where $paras";
+			$query="select user_id,user_name,full_name,email,department,staff_no,isrobot from svnauth_user where $paras";
 			$result = mysql_query($query); 			
 			while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
 				$user_id=$row['user_id'];
@@ -141,13 +141,21 @@ HTML;
 				$staff_no=$row['staff_no'];
 				$department=$row['department'];
 				$email=$row['email'];
+				$isrobot=$row['isrobot'];
+				if('y'==$isrobot)
+				{
+					$checked='checked';
+				}else
+					$checked='';
 				echo "<tr><td><input type=hidden name='userArray[]' value='$user_id'>
 				 <input type=hidden name='oldname[]' value='$user_name'>
 				 <input type=text name='username[]' value='$user_name'></td>
 				 <td><input type=text name='fullname[]' value='$full_name'></td>
 				 <td><input type=text name='staff_no[]' value='$staff_no'></td>
 				 <td><input type=text name='department[]' value='$department'></td>
-				 <td><input type=text name='email[]' value='$email'></td></tr>";
+				 <td><input type=text name='email[]' value='$email'></td>
+				 <td><input type=checkbox name='isrobot[]' value='y' $checked>机器人</td>
+				</tr>";
 			}
 		}else{
 			$query="select user_id,user_name,full_name,email,staff_no,department from svnauth_user where user_name='".$_SESSION['username']."'";
@@ -259,7 +267,7 @@ HTML;
 			echo "用户名不存在，请确认输入是否正确！";
 			exit;
 		}
-		$data_c=false
+		$data_c=false;
 		if($_POST['copym'] == 'cpm')
 		{
 		
@@ -294,6 +302,7 @@ HTML;
 		$staff_no=$_POST['staff_no'];
 		$email=$_POST['email'];	
 		$department=$_POST['department'];
+		$isrobot=$_POST['isrobot'];
 		if ($_SESSION['role']=='admin')
 		{
 			$data_c=false;
@@ -306,8 +315,14 @@ HTML;
 			  $staff_no[$i]=safe($staff_no[$i]);
 			  $email[$i]=safe($email[$i]);
 			  $department[$i]=safe($department[$i]);
+			  if('y'==$isrobot[$i])
+			{
+				$str_robot=" ,isrobot='y'";
+			}else
+				$str_robot='';
 			  if(empty($userid[$i]))continue;
-		  	  $query="update svnauth_user set user_name=$username[$i],full_name=$fullname[$i],staff_no=$staff_no[$i],email=$email[$i],department=$department[$i] where user_id=$userid[$i]";
+		  	  $query="update svnauth_user set user_name=$username[$i],full_name=$fullname[$i],staff_no=$staff_no[$i],email=$email[$i],department=$department[$i] $str_robot  where user_id=$userid[$i]";
+			# echo $query;exit;
 		  	  mysql_query($query);
 			}
 			if($data_c)

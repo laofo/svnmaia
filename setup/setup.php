@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS `svnauth_groupuser` (
 		mysql_query($query);
 		$query = "insert into svnauth_user (user_name,password,full_name,email,staff_no,department,supervisor,expire) values (\"root\",\"$svnpasswd\",\"super admin\",\" \",\"0\",\" \",1,'2110-01-01')";
 		mysql_query($query);
+
+                include('../db/dbmigrate.php');
 	}
 	if(empty($conn_error) and empty($db_error) and empty($usertb_err) and empty($perstb_err) and empty($admintb_err) and empty($paratb_err))
 	{

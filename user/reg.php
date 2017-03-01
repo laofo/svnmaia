@@ -34,7 +34,10 @@ $department=$_POST['department'];
 $email=$_POST['email'];
 if(!empty($_POST['randompwd']))
 {
-	$passwd=$passwd0=rand().rand();
+	$random=rand();
+	$rand64=substr("./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",$random  %  64,2);
+	$k1=rand().rand().$rand64;
+	$passwd=$passwd0=md5($k1);
 }
 if($email=="")$email=$username.$email_ext;
 if(($passwd == "")||($username =="")||($fullname ==""))

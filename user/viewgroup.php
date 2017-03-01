@@ -1,7 +1,6 @@
 <?php
 session_start();
 include("../include/charset.php");
-  // error_reporting(0);
 ?>
 <!--
 Author:lixuejiang

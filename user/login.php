@@ -28,6 +28,31 @@ if($usr =="")
 $user_id=0;
 //SQL查询语句;
 mysql_query("SET NAMES utf8");
+
+//查看错误次数
+$query="select wrongs,lastErrorTime from svnauth_user where user_name='$usr'";
+$result =mysql_query($query);
+if($result)$totalnum=mysql_num_rows($result);
+while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
+	$wrongs=$row['wrongs'];
+	$lasterror=strftime("%Y%m%d%H%M%S",strtotime($row['lastErrorTime']));
+	$now=strftime("%Y%m%d%H%M%S");
+	if($wrongs > 3)
+	{
+		$k=$wrongs * 5;
+		$should=$lasterror + $k;
+		if($now < $should)
+		{
+			echo "密码输错了 $wrongs 次，请等待 $k 秒后再试";
+			exit;
+		}
+	}
+}
+		
+
+
+//查询
+
 $query = "SELECT supervisor,user_id,password FROM svnauth_user WHERE user_name ='$usr';"; 
 
 // 执行查询
@@ -43,9 +68,14 @@ if($totalnum>0){
 	  	$_SESSION['role']=(empty($token))?'user':'admin';
 	  	$user_id=$row['user_id'];
 	  	$_SESSION['uid']=$row['user_id'];
+		  $query2="update svnauth_user set wrongs=0,lastErrorTime=NOW() where user_name='$usr';";
+		  mysql_query($query2);
 	 	echo "欢迎您回来！点击返回<a href='../default.htm'>Maia SVN用户管理首页</a>";
 	  }else
 	  {
+		  $wrongs++;
+		  $query2="update svnauth_user set wrongs=$wrongs,lastErrorTime=NOW() where user_name='$usr';";
+		  mysql_query($query2);
 		echo "<script>window.alert(\"密码错误！！\")</script>"; 
 		echo "<script>window.history.back();</script>";
 		exit;

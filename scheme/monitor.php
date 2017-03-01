@@ -52,7 +52,7 @@ if (mysql_select_db(DBNAME))
 		unset($logarr);
 		unset($diffarr);
 		$v1=$oldver+1;
-		exec("{$svn}svn log -v -r${v1}:$ver \"$localurl\"",$logarr);
+		exec("export LANG=zh_CN.utf8;{$svn}svn log -v -r${v1}:$ver \"$localurl\"",$logarr);
 		$filestr='';
 		list($repos,$ot)=explode('/',$url,2);
 		foreach($logarr as $k => $v)

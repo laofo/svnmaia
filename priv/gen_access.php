@@ -1,5 +1,5 @@
 <?php
- error_reporting(0);
+ error_reporting(E_ERROR);
 include('../include/charset.php');
 include('../include/requireAuth.php');
 include('../../../config.inc');
@@ -10,7 +10,7 @@ $access_g='';
 while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {	
 	$gid=$row['group_id'];
 	$gname=$row['group_name'];
-	$sql="select user_name from svnauth_groupuser,svnauth_user where svnauth_user.user_id=svnauth_groupuser.user_id and group_id=$gid and svnauth_user.fresh=0 group by user_name";
+	$sql="select user_name from svnauth_groupuser,svnauth_user where svnauth_user.user_id=svnauth_groupuser.user_id and group_id=$gid and svnauth_user.fresh!=1 group by user_name";
 	$result_u=mysql_query($sql);
 	$user_array=array();
 	while(($result_u)and($row2=mysql_fetch_array($result_u,MYSQL_BOTH))) {	
@@ -22,7 +22,7 @@ while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
 
 }
 
-$query="select svnauth_user.user_name,repository,path,permission from svnauth_permission,svnauth_user where svnauth_permission.user_id=svnauth_user.user_id and svnauth_user.fresh=0 order by repository,path";
+$query="select svnauth_user.user_name,repository,path,permission from svnauth_permission,svnauth_user where svnauth_permission.user_id=svnauth_user.user_id and svnauth_user.fresh!=1 order by repository,path";
 $result = mysql_query($query);
 $i=0;
 $repos='';
@@ -225,6 +225,18 @@ while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
 	
 }
 //echo str_replace("\n","<br>",$access);
+		if("[groups]\n" == $access)
+		{
+			echo "权限信息为空！";
+			exit;
+		}
+ // backup befor gen_access
+                $today = date("Ymd_His");
+                $backupfile=$accessfile.$today;
+                if (!copy($accessfile, $backupfile)) {
+                    echo "failed to backup $accessfile...\n";
+                }
+                $fs_o=filesize($backupfile);
 
 		$handle=fopen($accessfile,'w+');
 		if (fwrite($handle, $access) === FALSE) {
@@ -232,9 +244,21 @@ while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
 		}else
 			echo "权限生效成功！";
 		fclose($handle);
+  // only backup the file which filesize is reduced
+                $fs_n=filesize($accessfile);
+                if($fs_n > $fs_o)unlink($backupfile);
+
 		$fromurl=$_GET['fromurl'];
 		if(empty($fromurl))$fromurl='dirpriv.php';	
 		echo "&nbsp;&nbsp;&nbsp;&nbsp;<a href=$fromurl>返回</a>";		
+ // record info
+		 openlog("svnMaiaLog", LOG_PID | LOG_PERROR, LOG_LOCAL0);
+                 $time = date("Y/m/d H:i:s");
+		if(isset($_SESSION['username'])){
+			$t_user=$_SESSION['username'];
+		}else
+			$t_user='auto priv';
+                 syslog(LOG_ERR, "$accessfile changed by $t_user,$fromurl, $time");
 		
 
 

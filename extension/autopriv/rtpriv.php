@@ -2,6 +2,9 @@
 include('../../include/charset.php');
 error_reporting(0);
 $url=$_GET['url'];
+$p=$_GET['p'];
+if('w'==$p)$wp='selected';
+if('r'==$p)$rp='selected';
 ?>
 <html>
 <head>
@@ -21,8 +24,8 @@ fieldset{border:2px solid #A4CDF2;padding:20px;background:#DFE8F6;width:70%}
    		
    <table valign=top>
  <tr><td>申请的url:<input type=text name='wurl' size='45' value="<?php echo $url; ?>" onBlur="checkurl();"></td>
-       <td>&nbsp;&nbsp;权限:<select name="wpriv"><option value='r' label='只读'>只读</option>
-<option value='w' label='读写'>读写</option>
+       <td>&nbsp;&nbsp;权限:<select name="wpriv"><option value='r' <?php echo $rp ?>  label='只读'>只读</option>
+<option value='w' <?php echo $wp ?> label='读写'>读写</option>
 </select></td></tr>
   <tr><td colspan=3><label id='urltip' style='color:red;font-size:12px;'></label></td></tr>
    <tr><td colspan=3>申请理由:</td></tr>

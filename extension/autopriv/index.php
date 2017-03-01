@@ -130,8 +130,6 @@ if(isset($_POST['flag']))
 	mysql_query($query);
   }
   $scheme=true;
-  $backpath="$svnurl/$repos/$path";
-  @include('../../priv/gen_access.php');
   echo "处理成功！<a href='' onclick=\"javascript:self.close();\">关闭</a>";
 	  //发邮件通知
   $body="Hi,$us\n
@@ -141,6 +139,8 @@ if(isset($_POST['flag']))
 --------------------
 配置管理组
 ";
+  $backpath="$svnurl/$repos/$path";
+  @include('../../priv/gen_access.php');
   $sendinfo =send_mail($b_email,$subject,$body);
   exit;
 }

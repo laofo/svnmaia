@@ -12,6 +12,7 @@ if ($_SESSION['role'] !='admin')
 }
 include('../../../config.inc');
 include('../include/dbconnect.php');
+$legal_array=array('accessfile','passwdfile','htpasswd','svnurl','svnparentpath','svn','smtp_server','mail_method','use_smtp_authz','smtp_user','smtp_passwd','smtp_port','write_t','read_t','user_t','email_ext','email_from');
 if (mysql_select_db(DBNAME))
 {
 	$flag=false;
@@ -19,31 +20,40 @@ if (mysql_select_db(DBNAME))
 	if(!empty($_POST['accessfile']))
 	{
 		$file_str="<?php \n";
-		foreach($_POST as $para=>$v)
+		foreach($legal_array as $para)
 		{
+			$v=$_POST[$para];
 			if(!file_exists($v))
 				switch($para)
 				{
 				case 'accessfile':
-			 	$err_acc="<span class='err'><strong>Error:</strong>$v file not found!</span>";
+                                    $err_acc="<span class='err'><strong>Error:</strong>$v file not found!</span>";
 				break;
 				case 'passwdfile':
 					$err_pass="<span class='err'><strong>Error:</strong>$v file not found!</span>";
 				break;
 				case 'htpasswd':
 					if($v!='htpasswd')
-				$err_htpa="<span class='err'><strong>Error:</strong>$v file not found!</span>";
+                                        {
+                                            $err_htpa="<span class='err'><strong>Error:</strong>$v file not found!</span>";
+                                            $v='htpasswd';
+                                        }
 				break;
 				case 'svnparentpath':
-				$err_svnpath="<span class='err'><strong>Error:</strong>$v file not found!</span>";
+                                    $err_svnpath="<span class='err'><strong>Error:</strong>$v file not found!</span>";
 				case 'svn':
 					if(!empty($v))
-					$err_svn="<span class='err'><strong>Error:</strong>$v file not found!</span>";
+                                            $err_svn="<span class='err'><strong>Error:</strong>$v file not found!</span>";
 				break;
 
 				}
+			if($para=='htpasswd'){
+					$cmd=basename($v);
+					if($cmd!='htpasswd')$v='htpasswd';
+                        }
 			if($para=='svn'){
 					if(is_file($v))$v=dirname($v).'/';
+					if(!is_dir($v))$v='';
 			}
 			if($para=='smtp_passwd')
 			{
@@ -77,6 +87,8 @@ if (mysql_select_db(DBNAME))
 					$v='1';
 				}else  $v='2';
 			}
+			$para=htmlspecialchars($para,ENT_QUOTES);
+			$v=htmlspecialchars($v,ENT_QUOTES);
 			$para=mysql_real_escape_string($para);	
 			$v="'".mysql_real_escape_string($v)."'";
 			$query="update svnauth_para set value=$v where para='$para'";

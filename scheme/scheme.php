@@ -31,13 +31,11 @@ if (mysql_select_db(DBNAME))
 	//如果用户已过期，并且提醒次数超过3次，则删除用户，并立刻生效。
 	//$expire=mktime(0, 0, 0, date("m")  , date("d")-14, date("Y"));
 	//$expire=strftime("%Y-%m-%d",$expire);
-	$expire=date('Y-m-d' , strtotime('+2 week')); 
-	$query="delete from svnauth_user where infotimes > 2 and expire < NOW()";
+	$expire=date('Y-m-d' , strtotime('+1 week')); 
+	$query="update svnauth_user set fresh=1 where infotimes > 2 and expire < NOW() and isrobot != 'y'";
 	$valuechanged=false;
 	mysql_query($query);
 	if(mysql_affected_rows()>0)$valuechanged=true;
-	$query="select user_id,user_name,email,infotimes,expire from svnauth_user where expire < \"$expire\"";
-	$result=mysql_query($query);
 	include('../include/email.php');
 	if(file_exists('./tmp'))
 	{
@@ -51,12 +49,58 @@ if (mysql_select_db(DBNAME))
 	$handle=fopen('./tmp','w+');
 	fwrite($handle,date('Y-m-d'));
 	fclose($handle);
+//priv expire
+	 $query="select svnauth_user.user_id,user_name,email,svnauth_permission.expire,repository,path,permission  from svnauth_permission,svnauth_user where svnauth_permission.user_id=svnauth_user.user_id and svnauth_permission.expire < \"$expire\" and svnauth_permission.expire > NOW() ";
+       $result=mysql_query($query);
+       while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH)))
+        {
+                $permission=$p=trim($row['permission']);
+		switch($permission){
+	case 'w':
+		$permission='write';
+		break;
+	case 'r':
+		$permission='readOnly';
+		break;
+	case 'n':
+		continue 2;
+		break;
+		}
+                $myexpire=$row['expire'];
+		$d=(strtotime($row['expire'])-strtotime(date('Y-m-d')))/86400;
+                //$expire=strtotime("+7 day",strtotime($expire)");//后推1week
+                $user=$row['user_name'];
+                $uid=$row['user_id'];
+                $email=(empty($row['email']))?($user.$email_ext):$row['email'];
+		$path=$row['repository'].$row['path'];
+		$url="http://".$_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']))."/../extension/autopriv/rtpriv.php?url=$path&p=$p";
+		$body="HI,$user, 请注意：您对此目录的svn权限: $path (权限类型：$permission) 将于 $myexpire 到期,距离现在还有 $d 天. \n
+		写权限过期后，将变为有效期为140天的读权限；而读权限过期后，则变更为无权限.\n
+
+	如果您需要继续维持原来的权限类型，请点击如下链接进行重新申请：\n
+	$url
+
+	如果已不需要，请忽略此邮件。
+本邮件系统自动发出，回复无效。有疑问请找配管组。
+";
+	 $subject="通知：您有svn权限即将过期！";
+         $mail_info=send_mail($email,$subject,$body);
+	 if($mail_info === true)
+         {
+                        echo "<br>$user $path $permission 权限即将过期，已发邮件通知其激活续订！";
+          }
+	}
+//user expire
+	$expire=date('Y-m-d' , strtotime('+2 week')); 
+       $query="select user_id,user_name,email,infotimes,expire from svnauth_user where expire < \"$expire\"";
+        $result=mysql_query($query);
 	while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH)))
 	{
 		$infot=trim($row['infotimes']);
 		$infotimes=(empty($infot))?0:$infot;
-		if($infotimes>3)continue;
+		if($infotimes>20)continue;
 		$expire=$row['expire'];
+		$d=(strtotime($row['expire'])-strtotime(date('Y-m-d')))/86400;
 		//$expire=strtotime("+7 day",strtotime($expire)");//后推1week
 		$user=$row['user_name'];
 		$uid=$row['user_id'];
@@ -66,7 +110,7 @@ if (mysql_select_db(DBNAME))
 		//发邮件通知激活
 		$url="http://".$_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']))."/activeuser.php";
 	        $url=$url."?sig=$sig&u=$user&uid=$uid&email=$email";
-		$body="请注意：您的svn用户(http://".$_SERVER['HTTP_HOST']." )即将于 $expire 过期，用户名：$user\n
+		$body="请注意：您的svn用户(http://".$_SERVER['HTTP_HOST']." )即将于 $expire 过期，用户名：$user, 距离现在还有 $d 天\n
 
 			过期后，您的svn账户将被自动删除。\n
 
@@ -77,7 +121,7 @@ if (mysql_select_db(DBNAME))
 			
 本邮件系统自动发出，回复无效。有疑问请找配管组。
 ---";
-		$subject="通知：您的svn账户即将过期！";
+		$subject="警告：您的svn账户即将被冻结或删除！";
 		$mail_info=send_mail($email,$subject,$body);
 		//记录本次发邮件事件
 		if($mail_info === true)
@@ -100,13 +144,13 @@ if (mysql_select_db(DBNAME))
 
 	//判断写权限是否过期，如果已过期，则改为只读权限。
 	$expire=date('Y-m-d' , strtotime('+20 week'));
-	$query="update svnauth_permission set permission='r', expire=\"$expire\" where expire <= NOW() and permission='w' ";
+	$query="update svnauth_permission,svnauth_user  set permission='r', svnauth_permission.expire=\"$expire\" where svnauth_permission.expire <= NOW() and permission='w' and svnauth_user.isrobot != 'y' and svnauth_permission.user_id=svnauth_user.user_id";
 	mysql_query($query);
 	if(mysql_affected_rows()>0)$valuechanged=true;
 
 
 	//判断读权限是否过期，如果已过期，则改为无权限。
-	$query="update svnauth_permission set  permission='n', expire=\"$expire\" where expire <= NOW() and permission='r' ";
+	$query="delete svnauth_permission from svnauth_permission,svnauth_user    where svnauth_permission.expire <= NOW() and permission='r' and svnauth_user.isrobot != 'y'  and svnauth_permission.user_id=svnauth_user.user_id ";
 	mysql_query($query);
 	if(mysql_affected_rows()>0)$valuechanged=true;
 	//生效

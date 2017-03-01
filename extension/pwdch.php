@@ -35,6 +35,29 @@ if(isSamplePassword($passwd,$usr))
 		exit;
 }
 
+
+//查看错误次数
+$query="select wrongs,lastErrorTime from svnauth_user where user_name='$usr'";
+$result =mysql_query($query);
+if($result)$totalnum=mysql_num_rows($result);
+while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
+	$wrongs=$row['wrongs'];
+	$lasterror=strftime("%Y%m%d%H%M%S",strtotime($row['lastErrorTime']));
+	$now=strftime("%Y%m%d%H%M%S");
+	if($wrongs > 3)
+	{
+		$k=$wrongs * 5;
+		$should=$lasterror + $k;
+		if($now < $should)
+		{
+			echo "密码输错了 $wrongs 次，请等待 $k 秒后再试";
+			exit;
+		}
+	}
+}
+		
+
+
 //SQL查询语句;
 $query = "SELECT user_name,password FROM svnauth_user WHERE user_name ='$usr'"; 
 $result =mysql_query($query);
@@ -61,6 +84,9 @@ if($totalnum>0){
 		}
 	  }else
 	  {
+		  $wrongs++;
+		  $query2="update svnauth_user set wrongs=$wrongs,lastErrorTime=NOW() where user_name='$usr';";
+		  mysql_query($query2);
 		echo "<script>window.alert(\"原密码输入错误！\")</script>"; 
 		echo "<script>history.go(-1);</script>";
 	  }

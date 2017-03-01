@@ -41,7 +41,7 @@ $userArray=$_POST["userArray"];
 		if(is_numeric($expire)){
 			//$expire=mktime(0, 0, 0, date("m")  , date("d")+$expire, date("Y"));
 			$expire=date('Y-m-d' , strtotime("+$expire day"));
-			$query="update svnauth_user set expire=\"$expire\" where $paras";
+			$query="update svnauth_user set expire=\"$expire\" , infotimes=0 where $paras";
 			mysql_query($query) or $sc=false;
 		}
 	}

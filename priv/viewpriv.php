@@ -1,6 +1,5 @@
 <?php
 session_start();
- error_reporting(0);
 include('../include/charset.php');
 if (!isset($_SESSION['username'])){	
 	echo "请先<a href='../user/loginfrm.php'>登录</a> ！";
@@ -9,6 +8,7 @@ if (!isset($_SESSION['username'])){
 }
 include('../../../config.inc');
 include('../include/dbconnect.php');
+#error_reporting(1);
 $user_id=$_GET['u'];
 if(!is_numeric($user_id))
 {
@@ -43,6 +43,24 @@ function pri_modify()
 		$query="update svnauth_permission set permission='$right' where user_id=$user_id and repository='$repos' and path='$path'";
 		mysql_query($query);
 		echo mysql_error();
+	}
+	 if($action=='upgrade')
+        {
+                $right=mysql_real_escape_string($_GET['right']);
+		 switch($right){
+        case 'n':
+                $right='r';
+                break;
+        case 'r':
+                $right='w';
+                break;
+        case 'w':
+                return 0;
+                break;
+                }
+		$query="update svnauth_permission set permission='$right' where user_id=$user_id and repository='$repos' and path='$path'";
+                mysql_query($query);
+                echo mysql_error();
 	}
 	if($action=='del')
 	{
@@ -88,9 +106,9 @@ echo <<<HTML
 </style>
 HTML;
 echo $uinfo;
-$query="select fresh from svnauth_user where user_id=$user_id and fresh=1";
-$result=mysql_query($query);
-if(($result) and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
+$fquery="select fresh from svnauth_user where user_id=$user_id and fresh=1";
+$fresult=mysql_query($fquery);
+if(($fresult) and($row= mysql_fetch_array($fresult, MYSQL_BOTH))) {
 	$stat=$row['fresh'];
 	if(!empty($stat))echo"<b><font color=red>此用户已被冻结，所列权限不生效！</font></b>";
 }
@@ -102,7 +120,7 @@ while (($result)and($row= mysql_fetch_array($result, MYSQL_BOTH))) {
 	$act='';
 	if($_SESSION['role']=='admin')
 	{
-		$act="<a href='./viewpriv.php?action=degrade&u={$user_id}&right={$permission}&path={$path}&repos=$repos'>降权</a>&nbsp;&nbsp;<a href='./viewpriv.php?action=del&path={$path}&u={$user_id}&repos=$repos'>删除</a>";
+		$act="<a href='./viewpriv.php?action=upgrade&u={$user_id}&right={$permission}&path={$path}&repos=$repos'>升权</a>&nbsp;&nbsp;<a href='./viewpriv.php?action=degrade&u={$user_id}&right={$permission}&path={$path}&repos=$repos'>降权</a>&nbsp;&nbsp;<a href='./viewpriv.php?action=del&path={$path}&u={$user_id}&repos=$repos'>删除</a>";
 	}
 	$path=$repos.$path;
 	switch($permission){

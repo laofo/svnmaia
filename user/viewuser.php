@@ -63,8 +63,8 @@ if(! empty($_GET['username'])){
 		$staff_no=$row['staff_no'];
 		$email=$row['email'];
 		$department=$row['department'];
-		$status=$row['fresh'];
-		if(1==$status)
+		$status=trim($row['fresh']);
+		if(!empty($status))
 		{
 			$st='解冻';
 		}else
